@@ -5,6 +5,9 @@ from chains.rag_chain import get_context_from_rag
 from langchain_community.llms import Ollama
 from dotenv import load_dotenv
 import os
+from fastapi import UploadFile, File
+import shutil
+from chains.rag_chain import create_vectorstore
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +24,20 @@ class Query(BaseModel):
 @app.get("/")
 def home():
     return {"message": "LangChain + Gemma Medical API is running."}
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    upload_folder = "data"
+    destination = f"{upload_folder}/{file.filename}"
+
+    # Simpan file ke folder data/
+    with open(destination, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Bangun ulang vectorstore
+    create_vectorstore()
+
+    return {"message": f"File '{file.filename}' berhasil diupload dan vectorstore diperbarui."}
 
 @app.post("/ask")
 async def ask(query: Query):
