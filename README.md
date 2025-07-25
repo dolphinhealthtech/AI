@@ -127,3 +127,7 @@ langchain-medical-rag/
 - 🚀 [FastAPI](https://fastapi.tiangolo.com/)
 
 ---
+
+## Credits
+
+Dibuat oleh [dolphinhealthtech] mengunakan LangChain, Ollama, dan FastAPI.
