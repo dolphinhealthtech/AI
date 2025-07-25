@@ -1,0 +1,10 @@
+modelfile
+llama.cpp
+gemma-3b-it.gguf
+gemma-3-4b-it/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+venv310/
