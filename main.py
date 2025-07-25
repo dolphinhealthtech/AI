@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from agents.medical_agent import get_medical_answer
 from chains.rag_chain import get_context_from_rag
-from langchain_community.llms import Ollama
+from langchain_ollama  import OllamaLLM
 from dotenv import load_dotenv
 import os
 from fastapi import UploadFile, File
@@ -15,7 +15,7 @@ MODEL_NAME = os.getenv("OLLAMA_MODEL", "gemma-3b-it")
 
 # Initialize FastAPI app and model
 app = FastAPI()
-llm = Ollama(model=MODEL_NAME)
+llm = OllamaLLM(model=MODEL_NAME)
 
 # Request schema
 class Query(BaseModel):

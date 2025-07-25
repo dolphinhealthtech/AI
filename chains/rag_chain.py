@@ -1,11 +1,10 @@
 import os
 from dotenv import load_dotenv
-from langchain.vectorstores import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_chroma import Chroma
+from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain_community.llms import Ollama
 from loaders.document_loader import load_documents_from_folder
 
 # Load env vars
@@ -21,13 +20,22 @@ EMBED_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
 embedding_model = OllamaEmbeddings(model=EMBED_MODEL)
 
 # Buat vectorstore dari dokumen jika belum ada
+
 def create_vectorstore():
     docs = load_documents_from_folder(DATA_DIR)
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_documents(docs)
-    vectordb = Chroma.from_documents(chunks, embedding=embedding_model, persist_directory=VECTOR_DIR)
-    vectordb.persist()
+
+    # Buat vectorstore (Chroma) dengan penyimpanan otomatis
+    vectordb = Chroma.from_documents(
+        documents=chunks,
+        embedding=embedding_model,
+        collection_name="medical-data",  # WAJIB di versi baru
+        persist_path=VECTOR_DIR  # Gunakan persist_path, bukan persist_directory
+    )
+
     return vectordb
+
 
 # Load atau buat vectorstore
 if not os.path.exists(os.path.join(VECTOR_DIR, "chroma.sqlite3")):
@@ -37,7 +45,7 @@ else:
 
 # Buat retriever dengan kompresi menggunakan LLM dari Ollama
 retriever = vectordb.as_retriever(search_kwargs={"k": 4})
-llm = Ollama(model=LLM_MODEL)
+llm = OllamaLLM(model=LLM_MODEL)
 compressor = LLMChainExtractor.from_llm(llm)
 compression_retriever = ContextualCompressionRetriever(
     base_compressor=compressor,
@@ -47,7 +55,7 @@ compression_retriever = ContextualCompressionRetriever(
 # Fungsi utama untuk mengambil konteks dari dokumen
 def get_context_from_rag(question: str) -> str:
     try:
-        docs = compression_retriever.get_relevant_documents(question)
+        docs = compression_retriever.invoke(question)
         if not docs:
             return "Informasi tidak ditemukan di dokumen, namun saya akan mencoba menjawab berdasarkan pengetahuan saya."
         return "\n".join([doc.page_content for doc in docs])
